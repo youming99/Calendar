@@ -1,0 +1,95 @@
+/* 설정 */
+
+sqlplus
+system/1234
+show user
+
+create tablespace calendar
+datafile 'C:\Korea_IT_Academy\app\oracle\oradata\XE\calendar.dbf'
+size 10M;
+
+//user name : projectCalendar 
+//user pass : 1234
+create user projectCalendar
+identified by 1234
+default tablespace calendar
+quota unlimited on calendar;
+
+grant create session to projectCalendar;
+grant create table to projectCalendar; 
+grant create sequence to projectCalendar;
+grant create any job to projectCalendar;
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+/* 회원가입*/ 
+create table calendar_member(
+member_id number primary key
+, m_id varchar(20)
+, m_pw varchar(20)
+, m_nickName varchar(20)
+, m_email varchar(20)
+, m_phone varchar(20)
+);
+
+create sequence seq_calendar_member
+increment by 1
+start with 1;
+
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+/* 디데이 */
+create table d_day(
+dday_id number primary key
+, member_id number 
+, d_name varchar(20)
+, d_year number
+, d_month number
+, d_day number
+, foreign key (member_id) references calendar_member(member_id)
+);
+
+create sequence seq_d_day
+increment by 1
+start with 1;
+
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+/* 회원 프로필 사진 */
+create table profile_image(
+member_id number primary key,
+image varchar(100),
+foreign key(member_id) references calendar_member(member_id)
+);
+
+create sequence seq_profile_image
+increment by 1
+start with 1;
+
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+/* 오늘 할 일 */
+create table todo(
+todo_id number primary key,
+member_id number,
+memo varchar(50)
+, foreign key (member_id) references calendar_member(member_id)
+);
+
+create sequence seq_todo
+increment by 1
+start with 1;
+
+CREATE EVENT todo_event
+ON SCHEDULE EVERY 1 DAY STARTS '2020-11-23 23:59:59'
+DO delete from todo;
+
+
+DBMS_JOB.SUBMIT (
+job       OUT BINARY_INTEGER,
+what      IN  VARCHAR2,
+next_date IN  DATE DEFAULT 'sysdate+1',
+interval  IN  VARCHAR2 DEFAULT 'null',
+no_parse  IN  BOOLEAN DEFAULT FALSE,
+instance  IN  BINARY_INTEGER DEFAULT any_instance,
+force     IN  BOOLEAN DEFAULT FALSE);
+
+EXECUTE dbms_job.submit(1, 'projectCalendar.todo_procedure;', TRUNC(SYSDATE+1), 'TRUNC(SYSDATE+1)', FALSE);
+
+commit;
+
